@@ -1,66 +1,109 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+import { useState } from "react";
 
-export default function Home() {
+export default function HomePage() {
+  const [username, setUsername] = useState("");
+  const [topic, setTopic] = useState("");
+  const [results, setResults] = useState<any>(null);
+  const [article, setArticle] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+
+  const runSearch = async () => {
+    setLoading(true);
+    setArticle("");
+    try {
+      const res = await fetch(`/api/search?username=${username}&topic=${topic}`);
+      const data = await res.json();
+      setResults(data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateNews = async () => {
+    if (!results) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/generate-news`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tweets: results.tweets, verified: results.verified }),
+      });
+      const data = await res.json();
+      setArticle(data.article);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="p-6 max-w-2xl mx-auto space-y-4">
+      <h1 className="text-2xl font-bold">Twitter Konu Arama</h1>
+
+      <input
+        className="border p-2 w-full"
+        placeholder="Kullanıcı adı"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+      />
+
+      <input
+        className="border p-2 w-full"
+        placeholder="Konu / Topic"
+        value={topic}
+        onChange={(e) => setTopic(e.target.value)}
+      />
+
+      <button
+        className="bg-blue-600 text-white px-4 py-2 rounded"
+        onClick={runSearch}
+        disabled={loading}
+      >
+        Ara
+      </button>
+
+      {results && (
+        <div className="mt-6 space-y-4">
+          <h2 className="text-xl font-semibold">Sonuçlar</h2>
+
+          <div>
+            <h3 className="font-semibold">Kullanıcı Tweetleri</h3>
+            {results.tweets?.map((t: any) => (
+              <div key={t.id} className="border p-2 my-2 rounded">
+                <b>@{t.username}</b>
+                <p>{t.text}</p>
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <h3 className="font-semibold">Onaylı Hesaplardan</h3>
+            {results.verified?.map((t: any) => (
+              <div key={t.id} className="border p-2 my-2 rounded">
+                <b>@{t.username}</b>
+                <p>{t.text}</p>
+              </div>
+            ))}
+          </div>
+
+          <button
+            className="bg-green-600 text-white px-4 py-2 rounded"
+            onClick={generateNews}
+            disabled={loading}
           >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            Haber Oluştur
+          </button>
         </div>
-      </main>
+      )}
+
+      {article && (
+        <div className="mt-6 p-4 border rounded bg-gray-50 whitespace-pre-wrap">
+          <h2 className="text-xl font-bold mb-2">Oluşturulan Haber</h2>
+          {article}
+        </div>
+      )}
+
+      {loading && <p>Yükleniyor...</p>}
     </div>
   );
 }
