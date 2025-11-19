@@ -2,8 +2,8 @@
 import { useState } from "react";
 
 export default function HomePage() {
-  const [username, setUsername] = useState("");
-  const [topic, setTopic] = useState("");
+  const [username, setUsername] = useState("elonmusk");
+  const [topic, setTopic] = useState("trump");
   const [results, setResults] = useState<any>(null);
   const [article, setArticle] = useState<string>("");
   const [loading, setLoading] = useState(false);
